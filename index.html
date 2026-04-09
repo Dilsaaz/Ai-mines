@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mines - Daily MLM Trading</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&display=swap');
+        :root {
+            --primary: #00ff9d;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .logo-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .grid-box {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .grid-box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.5);
+        }
+        .revealed {
+            animation: flip 0.6s ease;
+        }
+        @keyframes flip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0deg); }
+        }
+        .nav-active {
+            border-bottom: 3px solid #00ff9d;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen">
+    <div class="max-w-7xl mx-auto">
+        <!-- NAV BAR -->
+        <nav id="navbar" class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-50 hidden">
+            <div class="px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl">💎</div>
+                    <h1 class="logo-font text-3xl tracking-tighter text-emerald-400">AI MINES</h1>
+                </div>
+                
+                <div class="flex items-center gap-8 text-sm font-medium">
+                    <a onclick="navigateTo('dashboard')" class="cursor-pointer flex items-center gap-2 hover:text-emerald-400 transition-colors" id="nav-dashboard">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                    <a onclick="navigateTo('team')" class="cursor-pointer flex items-center gap-2 hover:text-emerald-400 transition-colors" id="nav-team">
+                        <i class="fas fa-users"></i> Team
+                    </a>
+                    <a onclick="navigateTo('trade')" class="cursor-pointer flex items-center gap-2 hover:text-emerald-400 transition-colors" id="nav-trade">
+                        <i class="fas fa-gamepad"></i> Start Trade
+                    </a>
+                    <a onclick="navigateTo('deposit')" class="cursor-pointer flex items-center gap-2 hover:text-emerald-400 transition-colors" id="nav-deposit">
+                        <i class="fas fa-wallet"></i> Deposit
+                    </a>
+                    <a onclick="navigateTo('withdraw')" class="cursor-pointer flex items-center gap-2 hover:text-emerald-400 transition-colors" id="nav-withdraw">
+                        <i class="fas fa-money-bill-transfer"></i> Withdraw
+                    </a>
+                    <a onclick="navigateTo('profile')" class="cursor-pointer flex items-center gap-2 hover:text-emerald-400 transition-colors" id="nav-profile">
+                        <i class="fas fa-user"></i> Profile
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <!-- Wallet Balance -->
+                    <div onclick="navigateTo('dashboard')" class="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-3xl flex items-center gap-2 cursor-pointer">
+                        <i class="fas fa-coins text-emerald-400"></i>
+                        <span class="font-medium" id="nav-balance">0.00 USDT</span>
+                    </div>
+                    
+                    <!-- Logout -->
+                    <button onclick="logout()" 
+                            class="bg-zinc-800 hover:bg-red-500/10 hover:text-red-400 px-5 py-2 rounded-3xl text-sm font-medium flex items-center gap-2 transition-all">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
+                    
+                    <!-- Admin Button (demo ke liye secret) -->
+                    <button onclick="showAdminPanel()" 
+                            class="bg-amber-500 hover:bg-amber-600 px-4 py-2 rounded-3xl text-sm font-medium flex items-center gap-2">
+                        <i class="fas fa-crown"></i> Admin
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <div id="main-content" class="p-6">
+            <!-- LOGIN / REGISTER SCREEN -->
+            <div id="auth-screen" class="min-h-[90vh] flex items-center justify-center">
+                <div class="max-w-md w-full bg-zinc-900 rounded-3xl p-8 shadow-2xl border border-zinc-800">
+                    <div class="text-center mb-8">
+                        <div class="mx-auto w-16 h-16 bg-emerald-500 rounded-3xl flex items-center justify-center text-4xl mb-4">💎</div>
+                        <h1 class="logo-font text-5xl tracking-tighter text-emerald-400 mb-2">AI MINES</h1>
+                        <p class="text-zinc-400">Daily MLM Trading Game</p>
+                    </div>
+
+                    <!-- Tab Switch -->
+                    <div class="flex bg-zinc-800 rounded-3xl p-1 mb-8">
+                        <button onclick="switchAuthTab(0)" id="tab-login"
+                                class="flex-1 py-3 text-sm font-medium rounded-3xl transition-all">Login</button>
+                        <button onclick="switchAuthTab(1)" id="tab-register"
+                                class="flex-1 py-3 text-sm font-medium rounded-3xl transition-all">Register</button>
+                    </div>
+
+                    <!-- LOGIN FORM -->
+                    <div id="login-form">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="text-zinc-400 text-sm block mb-2">Email</label>
+                                <input id="login-email" type="email" placeholder="you@email.com"
+                                       class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-400 rounded-2xl px-5 py-4 outline-none text-white">
+                            </div>
+                            <div>
+                                <label class="text-zinc-400 text-sm block mb-2">Password</label>
+                                <input id="login-password" type="password" placeholder="••••••••"
+                                       class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-400 rounded-2xl px-5 py-4 outline-none text-white">
+                            </div>
+                            <button onclick="handleLogin()" 
+                                    class="w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-3xl text-lg font-semibold transition-all">
+                                Login Now
+                            </button>
+                        </div>
+                        <p class="text-center text-zinc-400 mt-6 text-sm">No account? <span onclick="switchAuthTab(1)" class="text-emerald-400 cursor-pointer">Register here</span></p>
+                    </div>
+
+                    <!-- REGISTER FORM -->
+                    <div id="register-form" class="hidden">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="text-zinc-400 text-sm block mb-2">Email</label>
+                                <input id="reg-email" type="email" placeholder="you@email.com"
+                                       class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-400 rounded-2xl px-5 py-4 outline-none text-white">
+                            </div>
+                            <div>
+                                <label class="text-zinc-400 text-sm block mb-2">Password (min 6 char)</label>
+                                <input id="reg-password" type="password" placeholder="••••••••"
+                                       class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-400 rounded-2xl px-5 py-4 outline-none text-white">
+                            </div>
+                            <div>
+                                <label class="text-zinc-400 text-sm block mb-2">Referral Code (optional)</label>
+                                <input id="reg-referral" type="text" placeholder="AI12345" value=""
+                                       class="w-full bg-zinc-800 border border-zinc-700 focus:border-emerald-400 rounded-2xl px-5 py-4 outline-none text-white">
+                            </div>
+
+                            <!-- OTP Section -->
+                            <div id="otp-section" class="hidden">
+                                <label class="text-zinc-400 text-sm block mb-2">Enter OTP sent to your email</label>
+                                <div class="flex gap-3">
+                                    <input id="otp-input" type="text" maxlength="6" placeholder="123456"
+                                           class="flex-1 bg-zinc-800 border border-zinc-700 focus:border-emerald-400 rounded-2xl px-5 py-4 outline-none text-white text-center text-2xl tracking-widest">
+                                </div>
+                                <button onclick="verifyOTP()" 
+                                        class="mt-4 w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-3xl text-lg font-semibold">
+                                    Verify OTP & Register
+                                </button>
+                            </div>
+
+                            <button onclick="sendOTP()" id="send-otp-btn"
+                                    class="w-full bg-emerald-500 hover:bg-emerald-600 py-4 rounded-3xl text-lg font-semibold">
+                                Send OTP on Email
+                            </button>
+                        </div>
+                        <p class="text-center text-zinc-400 mt-6 text-sm">Already have account? <span onclick="switchAuthTab(0)" class="text-emerald-400 cursor-pointer">Login here</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARD -->
+            <div id="dashboard-page" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Welcome Card -->
+                    <div class="md:col-span-2 bg-gradient-to-br from-emerald-500/10 to-zinc-900 border border-emerald-500/30 rounded-3xl p-8">
+                        <h2 class="text-4xl font-semibold mb-2">Welcome back, <span id="dash-name" class="text-emerald-400"></span> 👋</h2>
+                        <p class="text-zinc-400 text-lg">Aaj ka daily trade karo aur profit kamao!</p>
+                        
+                        <div class="mt-10 flex items-end gap-8">
+                            <div>
+                                <p class="text-zinc-400 text-sm">Wallet Balance</p>
+                                <p id="dash-balance" class="text-7xl font-bold text-emerald-400">0.00 <span class="text-3xl">USDT</span></p>
+                            </div>
+                            <div class="flex-1">
+                                <button onclick="navigateTo('trade')" 
+                                        class="bg-emerald-500 hover:bg-emerald-600 w-full max-w-xs py-6 rounded-3xl text-2xl font-semibold flex items-center justify-center gap-3">
+                                    <i class="fas fa-bolt"></i> START TRADE
+                                </button>
+                                <p class="text-xs text-emerald-400 mt-2 text-center">Daily ek baar hi allowed</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="bg-zinc-900 rounded-3xl p-8 flex flex-col justify-between">
+                        <div>
+                            <p class="text-zinc-400">Today's Status</p>
+                            <p id="today-status" class="text-3xl font-semibold text-emerald-400">Not Played Yet</p>
+                        </div>
+                        <div class="text-6xl text-center my-auto">💎</div>
+                        <div class="text-sm text-zinc-400">
+                            <i class="fas fa-check-circle text-emerald-400"></i> Next play possible tomorrow
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="md:col-span-3 bg-zinc-900 rounded-3xl p-6">
+                        <h3 class="font-medium mb-4 flex items-center gap-2"><i class="fas fa-history"></i> Recent Activity</h3>
+                        <div id="activity-list" class="space-y-3 text-sm"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEAM SECTION -->
+            <div id="team-page" class="hidden">
+                <div class="bg-zinc-900 rounded-3xl p-8">
+                    <h2 class="text-3xl font-semibold mb-6 flex items-center gap-3"><i class="fas fa-users"></i> Your Team (MLM)</h2>
+                    
+                    <div class="bg-zinc-800 rounded-3xl p-6 mb-8">
+                        <p class="text-zinc-400 mb-2">Your Referral Link</p>
+                        <div class="flex bg-white/5 rounded-2xl p-2">
+                            <input id="referral-link" readonly class="flex-1 bg-transparent px-5 outline-none text-emerald-400 font-mono text-sm">
+                            <button onclick="copyReferral()" class="bg-emerald-500 px-8 rounded-xl text-sm font-medium">COPY</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-zinc-800 rounded-3xl p-6 text-center">
+                            <p class="text-emerald-400 text-sm">Total Team Members</p>
+                            <p id="team-count" class="text-6xl font-bold text-white">12</p>
+                        </div>
+                        <div class="bg-zinc-800 rounded-3xl p-6 text-center">
+                            <p class="text-emerald-400 text-sm">Direct Referrals</p>
+                            <p id="direct-count" class="text-6xl font-bold text-white">5</p>
+                        </div>
+                        <div class="bg-zinc-800 rounded-3xl p-6 text-center">
+                            <p class="text-emerald-400 text-sm">Team Earnings</p>
+                            <p id="team-earnings" class="text-6xl font-bold text-emerald-400">245 USDT</p>
+                        </div>
+                    </div>
+
+                    <h4 class="mt-10 mb-4 text-zinc-400">Team Members</h4>
+                    <div id="team-list" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <!-- TRADE / GAME PAGE -->
+            <div id="trade-page" class="hidden">
+                <div class="max-w-4xl mx-auto bg-zinc-900 rounded-3xl p-8">
+                    <h2 class="text-3xl font-semibold mb-8 text-center">🎮 AI Mines Game</h2>
+                    <p class="text-center text-zinc-400 mb-8">Select number of mines (1-12). Click ONE box. Diamond = WIN 50$ × multiplier</p>
+
+                    <!-- Mine Selector -->
+                    <div class="flex flex-wrap justify-center gap-3 mb-10" id="mine-selector">
+                        <!-- JS se populate hoga -->
+                    </div>
+
+                    <div id="game-area" class="hidden">
+                        <div class="flex justify-between items-center mb-6 px-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-emerald-400 font-medium" id="selected-mines-text">Mines: 5</span>
+                                <span class="text-amber-400 font-medium" id="multiplier-text">× 3.9</span>
+                            </div>
+                            <button onclick="resetGame()" class="text-zinc-400 hover:text-white text-sm flex items-center gap-1">
+                                <i class="fas fa-redo"></i> New Game
+                            </button>
+                        </div>
+
+                        <!-- 5x5 Grid -->
+                        <div id="mines-grid" class="grid grid-cols-5 gap-3 max-w-[420px] mx-auto">
+                            <!-- JS se 25 boxes banenge -->
+                        </div>
+
+                        <div id="game-result" class="mt-8 text-center hidden">
+                            <div id="result-icon" class="text-8xl mx-auto mb-4"></div>
+                            <p id="result-text" class="text-2xl font-semibold"></p>
+                            <p id="result-profit" class="text-4xl font-bold text-emerald-400 mt-2"></p>
+                            <button onclick="navigateTo('dashboard')" 
+                                    class="mt-6 bg-emerald-500 px-10 py-4 rounded-3xl text-lg">Back to Dashboard</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEPOSIT PAGE -->
+            <div id="deposit-page" class="hidden">
+                <div class="max-w-2xl mx-auto bg-zinc-900 rounded-3xl p-10">
+                    <h2 class="text-3xl font-semibold mb-8">Deposit USDT (BEP20)</h2>
+                    <div class="bg-zinc-800 rounded-3xl p-8 text-center">
+                        <p class="text-zinc-400 mb-3">Send minimum <span class="font-bold text-emerald-400">50 USDT</span> to this address:</p>
+                        <div class="font-mono bg-black text-emerald-400 text-lg p-6 rounded-2xl break-all mb-6" id="deposit-address">
+                            0xDd3A2288B113b71D33E52935FEA8eaa1Dc6C62af
+                        </div>
+                        <button onclick="copyAddress()" 
+                                class="bg-emerald-500 hover:bg-emerald-600 px-8 py-3 rounded-2xl text-sm inline-flex items-center gap-2">
+                            <i class="fas fa-copy"></i> Copy Address
+                        </button>
+                    </div>
+
+                    <div class="mt-10">
+                        <h3 class="font-medium mb-4">Submit Proof (TX Hash)</h3>
+                        <input id="tx-hash" type="text" placeholder="0x1234...abcd" 
+                               class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-6 py-5 outline-none">
+                        <button onclick="submitDepositProof()" 
+                                class="mt-6 w-full bg-emerald-500 py-5 rounded-3xl text-xl font-semibold">Submit Deposit Proof</button>
+                        <p class="text-xs text-zinc-500 mt-4 text-center">Admin 1-2 hours mein approve kar denge</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WITHDRAW PAGE -->
+            <div id="withdraw-page" class="hidden">
+                <div class="max-w-2xl mx-auto bg-zinc-900 rounded-3xl p-10">
+                    <h2 class="text-3xl font-semibold mb-8">Withdraw USDT (BEP20)</h2>
+                    <div class="space-y-8">
+                        <div>
+                            <label class="block text-zinc-400 mb-3">Your BEP20 Wallet Address</label>
+                            <input id="withdraw-address" type="text" placeholder="0xYourWalletAddress..." 
+                                   class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-6 py-5 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-zinc-400 mb-3">Amount (min 15 USDT)</label>
+                            <input id="withdraw-amount" type="number" value="50" 
+                                   class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-6 py-5 outline-none">
+                        </div>
+                        <button onclick="requestWithdraw()" 
+                                class="w-full bg-emerald-500 hover:bg-emerald-600 py-6 rounded-3xl text-2xl font-semibold">Request Withdraw (Daily Allowed)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFILE PAGE -->
+            <div id="profile-page" class="hidden">
+                <div class="max-w-2xl mx-auto bg-zinc-900 rounded-3xl p-10">
+                    <h2 class="text-3xl font-semibold mb-8">Profile</h2>
+                    <div class="flex items-center gap-6 mb-10">
+                        <div class="w-20 h-20 bg-emerald-500/20 rounded-3xl flex items-center justify-center text-4xl">👤</div>
+                        <div>
+                            <p id="profile-email" class="text-2xl font-medium"></p>
+                            <p class="text-emerald-400 text-sm">Member since: <span id="profile-joined">Today</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-8">
+                        <div class="flex justify-between items-center border-b border-zinc-800 pb-6">
+                            <div>
+                                <p class="text-zinc-400">Wallet Balance</p>
+                                <p id="profile-balance" class="text-4xl font-bold text-emerald-400">0.00 USDT</p>
+                            </div>
+                            <button onclick="navigateTo('deposit')" class="px-8 py-3 bg-emerald-500 rounded-3xl">Deposit</button>
+                        </div>
+                        
+                        <div>
+                            <p class="text-zinc-400 mb-3">Your BEP20 Withdraw Address</p>
+                            <input id="profile-withdraw-address" type="text" class="w-full bg-zinc-800 border border-zinc-700 rounded-3xl px-6 py-5 outline-none">
+                            <button onclick="saveWithdrawAddress()" class="mt-4 text-sm bg-zinc-800 px-6 py-3 rounded-2xl">Save Address</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN PANEL -->
+            <div id="admin-page" class="hidden">
+                <div class="bg-zinc-900 rounded-3xl p-8 max-w-6xl mx-auto">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-3xl font-semibold flex items-center gap-3"><i class="fas fa-crown text-amber-400"></i> Admin Panel</h2>
+                        <button onclick="hideAdminPanel()" class="text-red-400">Close</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-8">
+                        <!-- Deposit Requests -->
+                        <div>
+                            <h3 class="font-medium mb-4">Pending Deposits</h3>
+                            <div id="admin-deposits" class="space-y-4"></div>
+                        </div>
+                        
+                        <!-- Withdraw Requests -->
+                        <div>
+                            <h3 class="font-medium mb-4">Pending Withdrawals</h3>
+                            <div id="admin-withdraws" class="space-y-4"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-10">
+                        <h3 class="font-medium mb-4">All Users (MLM Overview)</h3>
+                        <div id="admin-users" class="bg-zinc-800 rounded-3xl p-6"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script init
+        function initTailwind() {
+            tailwind.config = {
+                content: ["./**/*.{html,js}"],
+                theme: { extend: {} }
+            }
+        }
+
+        // Global variables
+        let currentUser = null
+        let currentPage = 'auth'
+        let selectedMines = null
+        let minesPositions = new Set()
+        let gridRevealed = false
+        let todayPlayed = false
+
+        // Multipliers as per your requirement
+        const multipliers = {
+            1: 1.5, 2: 2.1, 3: 2.6, 4: 3,
+            5: 3.9, 6: 5, 7: 8.5, 8: 10,
+            9: 12, 10: 16, 11: 20, 12: 25
+        }
+
+        // Demo data storage (localStorage)
+        function saveToLocalStorage() {
+            if (currentUser) {
+                localStorage.setItem('aiMinesUser', JSON.stringify(currentUser))
+            }
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('aiMinesUser')
+            if (saved) {
+                currentUser = JSON.parse(saved)
+                // Check if played today
+                const today = new Date().toDateString()
+                if (currentUser.lastPlayDate !== today) {
+                    currentUser.playedToday = false
+                }
+                return true
+            }
+            return false
+        }
+
+        // Fake OTP for demo (real mein Supabase email OTP use kar sakte ho)
+        let demoOTP = "123456"
+
+        function sendOTP() {
+            const email = document.getElementById('reg-email').value.trim()
+            if (!email || !email.includes('@')) {
+                alert("✅ Valid email daalo bhai!")
+                return
+            }
+            // Demo OTP dikhao
+            alert(`📧 OTP bhej diya gaya hai email par: ${demoOTP}\n(Demo mode - real app mein real OTP aayega)`)
+            document.getElementById('otp-section').classList.remove('hidden')
+            document.getElementById('send-otp-btn').classList.add('hidden')
+        }
+
+        function verifyOTP() {
+            const enteredOTP = document.getElementById('otp-input').value.trim()
+            if (enteredOTP === demoOTP) {
+                const email = document.getElementById('reg-email').value.trim()
+                const password = document.getElementById('reg-password').value.trim()
+                const referral = document.getElementById('reg-referral').value.trim() || "AI00000"
+
+                // Create new user
+                currentUser = {
+                    email: email,
+                    name: email.split('@')[0],
+                    balance: 0,
+                    referralCode: "AI" + Math.floor(10000 + Math.random() * 90000),
+                    referralBy: referral,
+                    joined: new Date().toISOString(),
+                    playedToday: false,
+                    lastPlayDate: "",
+                    withdrawAddress: "",
+                    team: [], // MLM team
+                    activities: [],
+                    depositRequests: [],
+                    withdrawRequests: []
+                }
+                
+                // Fake team members for demo
+                currentUser.team = [
+                    { name: "Rahul Sharma", email: "rahul@demo.com", level: "Direct", earnings: 85 },
+                    { name: "Priya Patel", email: "priya@demo.com", level: "Level 2", earnings: 45 },
+                    { name: "Aman Khan", email: "aman@demo.com", level: "Direct", earnings: 120 }
+                ]
+
+                saveToLocalStorage()
+                alert("🎉 Registration successful! Welcome to AI Mines")
+                showNavbar()
+                navigateTo('dashboard')
+            } else {
+                alert("❌ Wrong OTP! Demo mein 123456 use karo")
+            }
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('login-email').value.trim()
+            const password = document.getElementById('login-password').value.trim()
+            
+            if (loadFromLocalStorage()) {
+                // Already registered user
+                if (currentUser.email === email) {
+                    showNavbar()
+                    navigateTo('dashboard')
+                    return
+                }
+            }
+            
+            // Demo login - agar koi nahi hai toh register karne do
+            alert("Demo mode: Pehle register karo! (ya email/password match nahi hua)")
+        }
+
+        function switchAuthTab(tab) {
+            if (tab === 0) {
+                document.getElementById('login-form').classList.remove('hidden')
+                document.getElementById('register-form').classList.add('hidden')
+                document.getElementById('tab-login').classList.add('bg-emerald-500', 'text-white')
+                document.getElementById('tab-register').classList.remove('bg-emerald-500', 'text-white')
+            } else {
+                document.getElementById('login-form').classList.add('hidden')
+                document.getElementById('register-form').classList.remove('hidden')
+                document.getElementById('tab-register').classList.add('bg-emerald-500', 'text-white')
+                document.getElementById('tab-login').classList.remove('bg-emerald-500', 'text-white')
+            }
+        }
+
+        function showNavbar() {
+            document.getElementById('navbar').classList.remove('hidden')
+            document.getElementById('auth-screen').classList.add('hidden')
+        }
+
+        function logout() {
+            currentUser = null
+            localStorage.removeItem('aiMinesUser')
+            location.reload()
+        }
+
+        function navigateTo(page) {
+            currentPage = page
+            // Hide all pages
+            document.querySelectorAll('#main-content > div').forEach(div => {
+                if (div.id.includes('-page') || div.id === 'admin-page') div.classList.add('hidden')
+            })
+            
+            // Show selected page
+            const target = document.getElementById(page + '-page')
+            if (target) target.classList.remove('hidden')
+            
+            // Update active nav
+            document.querySelectorAll('#navbar a').forEach(a => a.classList.remove('nav-active'))
+            const activeNav = document.getElementById('nav-' + page)
+            if (activeNav) activeNav.classList.add('nav-active')
+            
+            // Render page specific content
+            if (page === 'dashboard') renderDashboard()
+            else if (page === 'team') renderTeam()
+            else if (page === 'trade') renderTradeSelector()
+            else if (page === 'profile') renderProfile()
+        }
+
+        function renderDashboard() {
+            document.getElementById('dash-name').textContent = currentUser.name
+            document.getElementById('dash-balance').innerHTML = `${currentUser.balance.toFixed(2)} <span class="text-3xl">USDT</span>`
+            document.getElementById('nav-balance').textContent = `${currentUser.balance.toFixed(2)} USDT`
+            
+            const statusEl = document.getElementById('today-status')
+            const today = new Date().toDateString()
+            if (currentUser.playedToday && currentUser.lastPlayDate === today) {
+                statusEl.innerHTML = `✅ Played Today<br><span class="text-sm">Kal try karo</span>`
+                statusEl.className = "text-3xl font-semibold text-amber-400"
+            } else {
+                statusEl.textContent = "Ready for Trade!"
+                statusEl.className = "text-3xl font-semibold text-emerald-400"
+            }
+
+            // Activity list
+            const activityHTML = currentUser.activities.length 
+                ? currentUser.activities.slice(0, 5).map(act => `
+                    <div class="flex justify-between bg-zinc-800/50 p-4 rounded-2xl">
+                        <div class="flex gap-3"><span class="text-emerald-400">${act.icon}</span> ${act.text}</div>
+                        <div class="text-zinc-400">${act.time}</div>
+                    </div>`).join('')
+                : `<p class="text-zinc-400 text-center py-8">Koi activity nahi hai abhi</p>`
+            document.getElementById('activity-list').innerHTML = activityHTML
+        }
+
+        function renderTeam() {
+            document.getElementById('referral-link').value = `https://aimines.netlify.app?ref=${currentUser.referralCode}`
+            document.getElementById('team-count').textContent = currentUser.team.length + 3 // fake extra
+            document.getElementById('direct-count').textContent = currentUser.team.filter(t => t.level === "Direct").length + 2
+            document.getElementById('team-earnings').textContent = currentUser.team.reduce((sum, t) => sum + t.earnings, 0) + " USDT"
+
+            let html = ''
+            currentUser.team.forEach(member => {
+                html += `
+                <div class="flex items-center justify-between bg-zinc-800 p-5 rounded-3xl">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-zinc-700 rounded-2xl flex items-center justify-center text-xl">👤</div>
+                        <div>
+                            <p class="font-medium">${member.name}</p>
+                            <p class="text-xs text-zinc-400">${member.email}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-emerald-400 text-sm">${member.level}</p>
+                        <p class="font-semibold">${member.earnings} USDT</p>
+                    </div>
+                </div>`
+            })
+            document.getElementById('team-list').innerHTML = html || `<p class="text-zinc-400 py-8 text-center">Team members yahan dikhega jab real referrals aayenge</p>`
+        }
+
+        function renderTradeSelector() {
+            const container = document.getElementById('mine-selector')
+            container.innerHTML = ''
+            
+            const today = new Date().toDateString()
+            if (currentUser.playedToday && currentUser.lastPlayDate === today) {
+                container.innerHTML = `<div class="text-center py-20">
+                    <p class="text-2xl text-amber-400">Aaj ka trade already ho chuka hai!</p>
+                    <p class="text-zinc-400 mt-4">Kal subah try karna 💎</p>
+                </div>`
+                return
+            }
+            
+            for (let i = 1; i <= 12; i++) {
+                const btn = document.createElement('button')
+                btn.className = `px-6 py-4 bg-zinc-800 hover:bg-emerald-500/20 hover:text-emerald-400 rounded-3xl text-xl font-semibold transition-all flex flex-col items-center min-w-[90px]`
+                btn.innerHTML = `
+                    <span class="text-sm text-zinc-400">MINES</span>
+                    <span class="text-4xl">${i}</span>
+                    <span class="text-emerald-400 text-sm">×${multipliers[i]}</span>
+                `
+                btn.onclick = () => startGame(i)
+                container.appendChild(btn)
+            }
+            
+            document.getElementById('game-area').classList.add('hidden')
+        }
+
+        function startGame(minesCount) {
+            selectedMines = minesCount
+            document.getElementById('mine-selector').classList.add('hidden')
+            document.getElementById('game-area').classList.remove('hidden')
+            
+            document.getElementById('selected-mines-text').textContent = `Mines: ${minesCount}`
+            document.getElementById('multiplier-text').innerHTML = `× <span class="text-emerald-400">${multipliers[minesCount]}</span>`
+            
+            // Create 5x5 grid
+            const grid = document.getElementById('mines-grid')
+            grid.innerHTML = ''
+            minesPositions.clear()
+            
+            // Random mines positions
+            const totalCells = 25
+            while (minesPositions.size < minesCount) {
+                minesPositions.add(Math.floor(Math.random() * totalCells))
+            }
+            
+            for (let i = 0; i < totalCells; i++) {
+                const cell = document.createElement('div')
+                cell.className = `grid-box aspect-square bg-zinc-800 hover:bg-emerald-400/10 border-2 border-zinc-700 rounded-3xl flex items-center justify-center text-5xl cursor-pointer`
+                cell.dataset.index = i
+                cell.onclick = (e) => handleCellClick(e, i)
+                grid.appendChild(cell)
+            }
+            
+            gridRevealed = false
+        }
+
+        function handleCellClick(e, index) {
+            if (gridRevealed) return
+            gridRevealed = true
+            
+            const isMine = minesPositions.has(index)
+            const allCells = document.querySelectorAll('#mines-grid > div')
+            
+            // Reveal only the clicked one for simplicity (as per your description "random koi bhi box")
+            const clickedCell = allCells[index]
+            clickedCell.classList.add('revealed')
+            
+            if (isMine) {
+                // Lose
+                clickedCell.innerHTML = '💣'
+                clickedCell.style.backgroundColor = '#f43f5e'
+                showGameResult(false)
+            } else {
+                // Win
+                clickedCell.innerHTML = '💎'
+                clickedCell.style.backgroundColor = '#10b981'
+                const profit = 50 * multipliers[selectedMines]
+                currentUser.balance += profit
+                currentUser.playedToday = true
+                currentUser.lastPlayDate = new Date().toDateString()
+                
+                // Add activity
+                currentUser.activities.unshift({
+                    icon: '💎',
+                    text: `Won ${profit.toFixed(2)} USDT from ${selectedMines} mines`,
+                    time: 'just now'
+                })
+                
+                saveToLocalStorage()
+                showGameResult(true, profit)
+            }
+            
+            // Reveal all mines for fun
+            allCells.forEach((cell, i) => {
+                if (minesPositions.has(i) && i !== index) {
+                    cell.innerHTML = '💣'
+                    cell.style.backgroundColor = '#f43f5e'
+                    cell.style.opacity = 0.6
+                }
+            })
+        }
+
+        function showGameResult(win, profit = 0) {
+            const resultDiv = document.getElementById('game-result')
+            resultDiv.classList.remove('hidden')
+            
+            if (win) {
+                document.getElementById('result-icon').innerHTML = '🎉'
+                document.getElementById('result-text').innerHTML = `Congratulations! You hit <span class="text-emerald-400">DIAMOND</span>`
+                document.getElementById('result-profit').innerHTML = `+ ${profit} USDT <span class="text-sm text-zinc-400">added to balance</span>`
+            } else {
+                document.getElementById('result-icon').innerHTML = '💥'
+                document.getElementById('result-text').innerHTML = `Mines hit! <span class="text-rose-400">50$ profit lost</span>`
+                document.getElementById('result-profit').innerHTML = `Better luck tomorrow!`
+            }
+            
+            // Update dashboard balance in nav
+            document.getElementById('nav-balance').textContent = `${currentUser.balance.toFixed(2)} USDT`
+        }
+
+        function resetGame() {
+            document.getElementById('game-area').classList.add('hidden')
+            document.getElementById('mine-selector').classList.remove('hidden')
+            document.getElementById('game-result').classList.add('hidden')
+        }
+
+        function copyReferral() {
+            const link = document.getElementById('referral-link').value
+            navigator.clipboard.writeText(link).then(() => alert("Referral link copied!"))
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText("0xDd3A2288B113b71D33E52935FEA8eaa1Dc6C62af").then(() => {
+                alert("✅ Deposit address copied!")
+            })
+        }
+
+        function submitDepositProof() {
+            const tx = document.getElementById('tx-hash').value.trim()
+            if (!tx) return alert("TX hash daalo")
+            
+            // Demo deposit request
+            currentUser.depositRequests.push({
+                tx: tx,
+                amount: 50,
+                status: "pending",
+                time: new Date().toLocaleString()
+            })
+            saveToLocalStorage()
+            alert("✅ Deposit proof submitted! Admin approve kar denge (demo mein 2 min baad balance add ho jayega)")
+            
+            // Auto approve for demo after 3 seconds
+            setTimeout(() => {
+                if (currentUser) {
+                    currentUser.balance += 50
+                    currentUser.activities.unshift({icon: '📥', text: '50 USDT deposited & approved', time: 'just now'})
+                    saveToLocalStorage()
+                    if (currentPage === 'dashboard') renderDashboard()
+                    alert("🎉 Deposit approved! 50 USDT added to your balance")
+                }
+            }, 3000)
+        }
+
+        function requestWithdraw() {
+            const address = document.getElementById('withdraw-address').value.trim()
+            const amount = parseFloat(document.getElementById('withdraw-amount').value)
+            
+            if (!address || amount < 15) {
+                return alert("Minimum 15 USDT aur valid BEP20 address daalo")
+            }
+            if (amount > currentUser.balance) {
+                return alert("Insufficient balance!")
+            }
+            
+            currentUser.withdrawRequests.push({
+                address: address,
+                amount: amount,
+                status: "pending",
+                time: new Date().toLocaleString()
+            })
+            currentUser.balance -= amount
+            saveToLocalStorage()
+            
+            alert(`✅ Withdraw request of ${amount} USDT submitted! (Demo mein 5 min mein manual approve ho jayega)`)
+            navigateTo('dashboard')
+        }
+
+        function renderProfile() {
+            document.getElementById('profile-email').textContent = currentUser.email
+            document.getElementById('profile-balance').innerHTML = `${currentUser.balance.toFixed(2)} <span class="text-emerald-400">USDT</span>`
+            document.getElementById('profile-withdraw-address').value = currentUser.withdrawAddress || ""
+            document.getElementById('profile-joined').textContent = new Date(currentUser.joined).toLocaleDateString('hi-IN')
+        }
+
+        function saveWithdrawAddress() {
+            currentUser.withdrawAddress = document.getElementById('profile-withdraw-address').value.trim()
+            saveToLocalStorage()
+            alert("✅ Withdraw address saved!")
+        }
+
+        // ADMIN PANEL (demo)
+        function showAdminPanel() {
+            if (!currentUser) return
+            document.getElementById('admin-page').classList.remove('hidden')
+            
+            // Fake deposit requests
+            let depHTML = `<div class="flex justify-between bg-emerald-500/10 p-4 rounded-2xl mb-3">
+                <div>TX: 0x123...abc • 50 USDT</div>
+                <button onclick="adminApproveDeposit()" class="bg-emerald-500 px-6 py-1 rounded-2xl text-sm">Approve</button>
+            </div>`
+            document.getElementById('admin-deposits').innerHTML = depHTML
+            
+            // Fake withdraw
+            let wdHTML = `<div class="flex justify-between bg-amber-500/10 p-4 rounded-2xl mb-3">
+                <div>0xUserWallet • 50 USDT</div>
+                <button onclick="adminApproveWithdraw()" class="bg-emerald-500 px-6 py-1 rounded-2xl text-sm">Approve & Send</button>
+            </div>`
+            document.getElementById('admin-withdraws').innerHTML = wdHTML
+            
+            // Users list
+            let usersHTML = `
+            <div class="flex justify-between p-4 border-b">
+                <div>${currentUser.email} (You)</div>
+                <div class="text-emerald-400">${currentUser.balance} USDT</div>
+            </div>
+            <div class="flex justify-between p-4 border-b text-zinc-400">
+                <div>rahul@demo.com</div>
+                <div>245 USDT</div>
+            </div>`
+            document.getElementById('admin-users').innerHTML = usersHTML
+        }
+
+        function hideAdminPanel() {
+            document.getElementById('admin-page').classList.add('hidden')
+        }
+
+        function adminApproveDeposit() {
+            if (currentUser) {
+                currentUser.balance += 50
+                saveToLocalStorage()
+                alert("✅ Deposit approved in admin panel!")
+                hideAdminPanel()
+                navigateTo('dashboard')
+            }
+        }
+
+        function adminApproveWithdraw() {
+            alert("✅ Withdraw approved! (Real app mein automatic BEP20 transaction trigger ho jayega)")
+            hideAdminPanel()
+        }
+
+        // Main App Start
+        function startApp() {
+            initTailwind()
+            
+            // Load saved user
+            if (loadFromLocalStorage()) {
+                showNavbar()
+                navigateTo('dashboard')
+            } else {
+                // Show auth screen
+                document.getElementById('auth-screen').classList.remove('hidden')
+            }
+            
+            console.log('%c🚀 AI Mines MLM System loaded successfully!', 'color:#00ff9d; font-size:18px; font-weight:600')
+            console.log('Netlify par deploy karne ke liye bas is file ko index.html naam se save karke Netlify dashboard mein drag & drop kar do!')
+        }
+
+        // Start the application
+        window.onload = startApp
+    </script>
+</body>
+</html>
